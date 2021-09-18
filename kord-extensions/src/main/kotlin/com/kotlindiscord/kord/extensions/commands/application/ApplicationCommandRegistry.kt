@@ -146,7 +146,7 @@ public open class ApplicationCommandRegistry : KoinComponent {
         try {
             commandsWithPerms.forEach { (guildId, commands) ->
                 if (guildId != null) {
-                    kord.bulkEditApplicationCommandPermissions(kord.resources.applicationId, guildId) {
+                    kord.bulkEditApplicationCommandPermissions(guildId) {
                         commands.forEach { (id, commandObj) ->
                             command(id) {
                                 commandObj.allowedUsers.map { user(it, true) }
@@ -390,7 +390,7 @@ public open class ApplicationCommandRegistry : KoinComponent {
 
         try {
             if (guild != null) {
-                kord.editApplicationCommandPermissions(kord.resources.applicationId, guild.id, match.id) {
+                kord.editApplicationCommandPermissions(guild.id, match.id) {
                     command.allowedUsers.map { user(it, true) }
                     command.disallowedUsers.map { user(it, false) }
 
