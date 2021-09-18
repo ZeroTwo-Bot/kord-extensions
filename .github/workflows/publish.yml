@@ -4,7 +4,6 @@ on:
   push:
     branches-ignore:
       - "root"
-      - "byte-doesnt-pay-me-enough"
 
 jobs:
   publish:
