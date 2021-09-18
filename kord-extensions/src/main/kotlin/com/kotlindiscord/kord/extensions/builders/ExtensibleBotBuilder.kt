@@ -157,7 +157,7 @@ public open class ExtensibleBotBuilder {
      * @see Kord
      */
     @BotBuilderDSL
-    public fun customKordBuilder(builder: suspend (String, suspend KordBuilder.() -> Unit) -> Kord) {
+    public fun customKordBuilder(builder: suspend (token: String, builder: suspend KordBuilder.() -> Unit) -> Kord) {
         kordBuilder = builder
     }
 
