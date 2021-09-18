@@ -13,11 +13,11 @@ suspend fun main() {
             localeResolver { guild, channel, user ->
                 @Suppress("UnderscoresInNumericLiterals")
                 when (user?.id?.value) {
-                    560515299388948500 -> SupportedLocales.FINNISH
-                    242043299022635020 -> SupportedLocales.FRENCH
-                    407110650217627658 -> SupportedLocales.FRENCH
-                    667552017434017794 -> SupportedLocales.CHINESE_SIMPLIFIED
-                    185461862878543872 -> SupportedLocales.GERMAN
+                    560515299388948500U -> SupportedLocales.FINNISH
+                    242043299022635020U -> SupportedLocales.FRENCH
+                    407110650217627658U -> SupportedLocales.FRENCH
+                    667552017434017794U -> SupportedLocales.CHINESE_SIMPLIFIED
+                    185461862878543872U -> SupportedLocales.GERMAN
 
                     else -> defaultLocale
                 }
