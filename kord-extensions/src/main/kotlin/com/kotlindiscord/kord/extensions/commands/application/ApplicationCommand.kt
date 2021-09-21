@@ -15,6 +15,7 @@ import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
 import dev.kord.core.any
 import dev.kord.core.behavior.GuildBehavior
+import dev.kord.core.behavior.RoleBehavior
 import dev.kord.core.behavior.UserBehavior
 import dev.kord.core.event.interaction.InteractionCreateEvent
 import org.koin.core.component.KoinComponent
@@ -103,7 +104,7 @@ public abstract class ApplicationCommand<E : InteractionCreateEvent>(
     }
 
     /** If your bot requires permissions to be able to execute the command, add them using this function. **/
-    public fun requirePermissions(vararg perms: Permission) {
+    public fun requireBotPermissions(vararg perms: Permission) {
         perms.forEach { requiredPerms.add(it) }
     }
 
@@ -123,25 +124,22 @@ public abstract class ApplicationCommand<E : InteractionCreateEvent>(
     }
 
     /** Register an allowed role, and set [allowByDefault] to `false`. **/
-    public open fun allowRole(role: Snowflake) {
+    public open fun allowRole(role: Snowflake): Boolean {
         allowByDefault = false
 
-        allowedRoles.add(role)
+        return allowedRoles.add(role)
     }
 
     /** Register an allowed role, and set [allowByDefault] to `false`. **/
-    public open fun allowRole(role: UserBehavior): Unit =
+    public open fun allowRole(role: RoleBehavior): Boolean =
         allowRole(role.id)
 
     /** Register a disallowed role, and set [allowByDefault] to `false`. **/
-    public open fun disallowRole(role: Snowflake) {
-        allowByDefault = false
-
+    public open fun disallowRole(role: Snowflake): Boolean =
         disallowedRoles.add(role)
-    }
 
     /** Register a disallowed role, and set [allowByDefault] to `false`. **/
-    public open fun disallowRole(role: UserBehavior): Unit =
+    public open fun disallowRole(role: RoleBehavior): Boolean =
         disallowRole(role.id)
 
     /** Register an allowed user, and set [allowByDefault] to `false`. **/
