@@ -3,7 +3,9 @@ package com.kotlindiscord.kord.extensions.extensions
 import com.kotlindiscord.kord.extensions.EventHandlerRegistrationException
 import com.kotlindiscord.kord.extensions.InvalidEventHandlerException
 import com.kotlindiscord.kord.extensions.events.EventHandler
+import dev.kord.core.enableEvent
 import dev.kord.core.event.Event
+import dev.kord.gateway.Intents
 import mu.KotlinLogging
 
 /**
@@ -23,14 +25,23 @@ public suspend inline fun <reified T : Event> Extension.event(
 
     try {
         eventHandler.validate()
-        eventHandler.job = bot.addEventHandler(eventHandler)
 
+        eventHandler.listenerRegistrationCallable = {
+            eventHandler.job = bot.registerListenerForHandler(eventHandler)
+        }
+
+        bot.addEventHandler(eventHandler)
         eventHandlers.add(eventHandler)
     } catch (e: EventHandlerRegistrationException) {
         logger.error(e) { "Failed to register event handler - $e" }
     } catch (e: InvalidEventHandlerException) {
         logger.error(e) { "Failed to register event handler - $e" }
     }
+
+    val fakeBuilder = Intents.IntentsBuilder()
+
+    fakeBuilder.enableEvent<T>()
+    intents += fakeBuilder.flags().values
 
     return eventHandler
 }
