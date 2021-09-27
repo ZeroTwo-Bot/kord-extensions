@@ -328,6 +328,10 @@ public open class ChatCommand<T : Arguments>(
     /** Checks whether the bot has the specified required permissions, throwing if it doesn't. **/
     @Throws(DiscordRelayedException::class)
     public open suspend fun checkBotPerms(context: ChatCommandContext<T>) {
+        if (requiredPerms.isEmpty()) {
+            return  // Nothing to check, don't try to hit the cache
+        }
+
         if (context.guild != null) {
             val perms = (context.channel.asChannel() as GuildChannel)
                 .permissionsForMember(kord.selfId)
@@ -339,8 +343,9 @@ public open class ChatCommand<T : Arguments>(
                     context.translate(
                         "commands.error.missingBotPermissions",
                         null,
+
                         replacements = arrayOf(
-                            missingPerms.map { it.translate(context) }.joinToString(", ")
+                            missingPerms.map { it.translate(context.getLocale()) }.joinToString(", ")
                         )
                     )
                 )
@@ -370,7 +375,7 @@ public open class ChatCommand<T : Arguments>(
         parser: StringParser,
         argString: String,
         skipChecks: Boolean = false
-    ) {
+    ): Unit = withLock {
         emitEventAsync(ChatCommandInvocationEvent(this, event))
 
         try {
@@ -383,13 +388,13 @@ public open class ChatCommand<T : Arguments>(
                     )
                 )
 
-                return
+                return@withLock
             }
         } catch (e: DiscordRelayedException) {
             emitEventAsync(ChatCommandFailedChecksEvent(this, event, e.reason))
             event.message.respond(e.reason)
 
-            return
+            return@withLock
         }
 
         val context = ChatCommandContext(this, event, commandName, parser, argString)
@@ -428,7 +433,7 @@ public open class ChatCommand<T : Arguments>(
             event.message.respond(e.reason)
             emitEventAsync(ChatCommandFailedChecksEvent(this, event, e.reason))
 
-            return
+            return@withLock
         }
 
         if (this.arguments != null) {
@@ -439,7 +444,7 @@ public open class ChatCommand<T : Arguments>(
                 event.message.respond(e.reason)
                 emitEventAsync(ChatCommandFailedParsingEvent(this, event, e))
 
-                return
+                return@withLock
             }
         }
 
@@ -513,7 +518,7 @@ public open class ChatCommand<T : Arguments>(
                 )
             }
 
-            return
+            return@withLock
         }
 
         emitEventAsync(ChatCommandSucceededEvent(this, event))

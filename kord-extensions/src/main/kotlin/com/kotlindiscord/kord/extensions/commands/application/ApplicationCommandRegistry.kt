@@ -18,6 +18,9 @@ import dev.kord.common.entity.ApplicationCommandType
 import dev.kord.common.entity.Snowflake
 import dev.kord.core.Kord
 import dev.kord.core.behavior.createApplicationCommands
+import dev.kord.core.behavior.createChatInputCommand
+import dev.kord.core.behavior.createMessageCommand
+import dev.kord.core.behavior.createUserCommand
 import dev.kord.core.event.interaction.ChatInputCommandInteractionCreateEvent
 import dev.kord.core.event.interaction.MessageCommandInteractionCreateEvent
 import dev.kord.core.event.interaction.UserCommandInteractionCreateEvent
@@ -280,7 +283,7 @@ public open class ApplicationCommandRegistry : KoinComponent {
                         is UserCommand<*> -> user(name) { this.register(locale, it) }
 
                         is SlashCommand<*, *> -> input(
-                            name, translationsProvider.translate(it.description, it.extension.bundle, locale = locale)
+                            name, it.getTranslatedDescription(locale)
                         ) { this.register(locale, it) }
                     }
                 }
@@ -299,7 +302,7 @@ public open class ApplicationCommandRegistry : KoinComponent {
                         is UserCommand<*> -> user(name) { this.register(locale, it) }
 
                         is SlashCommand<*, *> -> input(
-                            name, translationsProvider.translate(it.description, it.extension.bundle, locale = locale)
+                            name, it.getTranslatedDescription(locale)
                         ) { this.register(locale, it) }
                     }
                 }
@@ -440,7 +443,7 @@ public open class ApplicationCommandRegistry : KoinComponent {
     public open suspend fun registerAll(vararg commands: MessageCommand<*>): List<MessageCommand<*>> =
         commands.map {
             try {
-                registerGeneric(it) as MessageCommand<*>
+                register(it) as MessageCommand<*>
             } catch (e: KtorRequestException) {
                 logger.warn(e) {
                     "Failed to register ${it.type.name} command: ${it.name}" +
@@ -463,7 +466,7 @@ public open class ApplicationCommandRegistry : KoinComponent {
     public open suspend fun registerAll(vararg commands: SlashCommand<*, *>): List<SlashCommand<*, *>> =
         commands.map {
             try {
-                registerGeneric(it) as SlashCommand<*, *>
+                register(it) as SlashCommand<*, *>
             } catch (e: KtorRequestException) {
                 logger.warn(e) {
                     "Failed to register ${it.type.name} command: ${it.name}" +
@@ -486,7 +489,7 @@ public open class ApplicationCommandRegistry : KoinComponent {
     public open suspend fun registerAll(vararg commands: UserCommand<*>): List<UserCommand<*>> =
         commands.map {
             try {
-                registerGeneric(it) as UserCommand<*>
+                register(it) as UserCommand<*>
             } catch (e: KtorRequestException) {
                 logger.warn(e) {
                     "Failed to register ${it.type.name} command: ${it.name}" +
@@ -510,16 +513,203 @@ public open class ApplicationCommandRegistry : KoinComponent {
     // region: Typed registration functions
 
     /** Register a message command. **/
-    public open suspend fun register(command: MessageCommand<*>): MessageCommand<*> =
-        registerGeneric(command) as MessageCommand<*>
+    public open suspend fun register(command: MessageCommand<*>): MessageCommand<*>? {
+        val locale = bot.settings.i18nBuilder.defaultLocale
+
+        val guild = if (command.guildId != null) {
+            kord.getGuild(command.guildId!!)
+        } else {
+            null
+        }
+
+        val name = command.getTranslatedName(locale)
+
+        val response = if (guild == null) {
+            // We're registering global commands here, if the guild is null
+
+            kord.createGlobalMessageCommand(name) {
+                logger.trace { "Adding/updating global ${command.type.name} command: $name" }
+
+                this.register(locale, command)
+            }
+        } else {
+            // We're registering guild-specific commands here, if the guild is available
+
+            guild.createMessageCommand(name) {
+                logger.trace { "Adding/updating guild-specific ${command.type.name} command: $name" }
+
+                this.register(locale, command)
+            }
+        }
+
+        try {
+            if (guild != null) {
+                kord.editApplicationCommandPermissions(kord.resources.applicationId, guild.id, response.id) {
+                    command.allowedUsers.map { user(it, true) }
+                    command.disallowedUsers.map { user(it, false) }
+
+                    command.allowedRoles.map { role(it, true) }
+                    command.disallowedRoles.map { role(it, false) }
+                }
+
+                logger.trace { "Applied permissions for command: ${command.name} ($command)" }
+            } else {
+                logger.warn { "Applying permissions to global application commands is currently not supported." }
+            }
+        } catch (e: KtorRequestException) {
+            logger.error(e) {
+                "Failed to apply application command permissions. This command will not be registered." +
+                    if (e.error?.message != null) {
+                        "\n        Discord error message: ${e.error?.message}"
+                    } else {
+                        ""
+                    }
+            }
+        } catch (t: Throwable) {
+            logger.error(t) {
+                "Failed to apply application command permissions. This command will not be registered."
+            }
+
+            return null
+        }
+
+        messageCommands[response.id] = command
+
+        return command
+    }
 
     /** Register a slash command. **/
-    public open suspend fun register(command: SlashCommand<*, *>): SlashCommand<*, *> =
-        registerGeneric(command) as SlashCommand<*, *>
+    public open suspend fun register(command: SlashCommand<*, *>): SlashCommand<*, *>? {
+        val locale = bot.settings.i18nBuilder.defaultLocale
+
+        val guild = if (command.guildId != null) {
+            kord.getGuild(command.guildId!!)
+        } else {
+            null
+        }
+
+        val name = command.getTranslatedName(locale)
+        val description = command.getTranslatedDescription(locale)
+
+        val response = if (guild == null) {
+            // We're registering global commands here, if the guild is null
+
+            kord.createGlobalChatInputCommand(name, description) {
+                logger.trace { "Adding/updating global ${command.type.name} command: $name" }
+
+                this.register(locale, command)
+            }
+        } else {
+            // We're registering guild-specific commands here, if the guild is available
+
+            guild.createChatInputCommand(name, description) {
+                logger.trace { "Adding/updating guild-specific ${command.type.name} command: $name" }
+
+                this.register(locale, command)
+            }
+        }
+
+        try {
+            if (guild != null) {
+                kord.editApplicationCommandPermissions(kord.resources.applicationId, guild.id, response.id) {
+                    command.allowedUsers.map { user(it, true) }
+                    command.disallowedUsers.map { user(it, false) }
+
+                    command.allowedRoles.map { role(it, true) }
+                    command.disallowedRoles.map { role(it, false) }
+                }
+
+                logger.trace { "Applied permissions for command: ${command.name} ($command)" }
+            } else {
+                logger.warn { "Applying permissions to global application commands is currently not supported." }
+            }
+        } catch (e: KtorRequestException) {
+            logger.error(e) {
+                "Failed to apply application command permissions. This command will not be registered." +
+                    if (e.error?.message != null) {
+                        "\n        Discord error message: ${e.error?.message}"
+                    } else {
+                        ""
+                    }
+            }
+        } catch (t: Throwable) {
+            logger.error(t) {
+                "Failed to apply application command permissions. This command will not be registered."
+            }
+
+            return null
+        }
+
+        slashCommands[response.id] = command
+
+        return command
+    }
 
     /** Register a user command. **/
-    public open suspend fun register(command: UserCommand<*>): UserCommand<*> =
-        registerGeneric(command) as UserCommand<*>
+    public open suspend fun register(command: UserCommand<*>): UserCommand<*>? {
+        val locale = bot.settings.i18nBuilder.defaultLocale
+
+        val guild = if (command.guildId != null) {
+            kord.getGuild(command.guildId!!)
+        } else {
+            null
+        }
+
+        val name = command.getTranslatedName(locale)
+
+        val response = if (guild == null) {
+            // We're registering global commands here, if the guild is null
+
+            kord.createGlobalUserCommand(name) {
+                logger.trace { "Adding/updating global ${command.type.name} command: $name" }
+
+                this.register(locale, command)
+            }
+        } else {
+            // We're registering guild-specific commands here, if the guild is available
+
+            guild.createUserCommand(name) {
+                logger.trace { "Adding/updating guild-specific ${command.type.name} command: $name" }
+
+                this.register(locale, command)
+            }
+        }
+
+        try {
+            if (guild != null) {
+                kord.editApplicationCommandPermissions(kord.resources.applicationId, guild.id, response.id) {
+                    command.allowedUsers.map { user(it, true) }
+                    command.disallowedUsers.map { user(it, false) }
+
+                    command.allowedRoles.map { role(it, true) }
+                    command.disallowedRoles.map { role(it, false) }
+                }
+
+                logger.trace { "Applied permissions for command: ${command.name} ($command)" }
+            } else {
+                logger.warn { "Applying permissions to global application commands is currently not supported." }
+            }
+        } catch (e: KtorRequestException) {
+            logger.error(e) {
+                "Failed to apply application command permissions. This command will not be registered." +
+                    if (e.error?.message != null) {
+                        "\n        Discord error message: ${e.error?.message}"
+                    } else {
+                        ""
+                    }
+            }
+        } catch (t: Throwable) {
+            logger.error(t) {
+                "Failed to apply application command permissions. This command will not be registered."
+            }
+
+            return null
+        }
+
+        userCommands[response.id] = command
+
+        return command
+    }
 
     // endregion
 
@@ -581,7 +771,11 @@ public open class ApplicationCommandRegistry : KoinComponent {
     ) {
         try {
             if (command.guildId != null) {
-                kord.unsafe.guildApplicationCommand(command.guildId!!, kord.resources.applicationId, discordCommandId)
+                kord.unsafe.guildApplicationCommand(
+                    command.guildId!!,
+                    kord.resources.applicationId,
+                    discordCommandId
+                )
             } else {
                 kord.unsafe.globalApplicationCommand(kord.resources.applicationId, discordCommandId).delete()
             }
@@ -671,7 +865,7 @@ public open class ApplicationCommandRegistry : KoinComponent {
 
                 this.subCommand(
                     it.name,
-                    translationsProvider.translate(it.description, command.extension.bundle, locale = locale)
+                    it.getTranslatedDescription(locale)
                 ) {
                     if (args != null) {
                         if (this.options == null) this.options = mutableListOf()
@@ -682,7 +876,7 @@ public open class ApplicationCommandRegistry : KoinComponent {
             }
 
             command.groups.values.forEach { group ->
-                this.group(group.name, group.description) {
+                this.group(group.name, group.getTranslatedDescription(locale)) {
                     group.subCommands.forEach {
                         val args = it.arguments?.invoke()?.args?.map { arg ->
                             val converter = arg.converter
@@ -697,7 +891,7 @@ public open class ApplicationCommandRegistry : KoinComponent {
 
                         this.subCommand(
                             it.name,
-                            translationsProvider.translate(it.description, command.extension.bundle, locale = locale)
+                            it.getTranslatedDescription(locale)
                         ) {
                             if (args != null) {
                                 if (this.options == null) this.options = mutableListOf()
