@@ -25,6 +25,7 @@ val printVersion = task("printVersion") {
 }
 
 repositories {
+    maven("https://nexus.zerotwo.bot/repository/m2-snapshots-public/")
     google()
     mavenCentral()
 
