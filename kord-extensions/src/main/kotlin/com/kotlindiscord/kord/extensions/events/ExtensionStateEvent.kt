@@ -2,6 +2,8 @@ package com.kotlindiscord.kord.extensions.events
 
 import com.kotlindiscord.kord.extensions.extensions.Extension
 import com.kotlindiscord.kord.extensions.extensions.ExtensionState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -13,5 +15,5 @@ import kotlin.coroutines.CoroutineContext
 public data class ExtensionStateEvent(
     public val extension: Extension,
     public val state: ExtensionState,
-    override val coroutineContext: CoroutineContext = extension.kord.coroutineContext,
+    override val coroutineContext: CoroutineContext = SupervisorJob() + Dispatchers.Default,
 ) : KordExEvent
