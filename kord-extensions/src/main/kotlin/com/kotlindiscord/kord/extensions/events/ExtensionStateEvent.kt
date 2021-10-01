@@ -2,6 +2,7 @@ package com.kotlindiscord.kord.extensions.events
 
 import com.kotlindiscord.kord.extensions.extensions.Extension
 import com.kotlindiscord.kord.extensions.extensions.ExtensionState
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Event fired when an extension's state changes.
@@ -11,5 +12,6 @@ import com.kotlindiscord.kord.extensions.extensions.ExtensionState
  */
 public data class ExtensionStateEvent(
     public val extension: Extension,
-    public val state: ExtensionState
+    public val state: ExtensionState,
+    override val coroutineContext: CoroutineContext = extension.kord.coroutineContext,
 ) : KordExEvent

@@ -4,6 +4,7 @@ import com.kotlindiscord.kord.extensions.commands.application.message.EphemeralM
 import com.kotlindiscord.kord.extensions.commands.application.message.MessageCommand
 import com.kotlindiscord.kord.extensions.commands.application.message.PublicMessageCommand
 import dev.kord.core.event.interaction.MessageCommandInteractionCreateEvent
+import kotlin.coroutines.CoroutineContext
 
 // region Invocation events
 
@@ -14,13 +15,15 @@ public interface MessageCommandInvocationEvent<C : MessageCommand<*>> :
 /** Event emitted when an ephemeral message command is invoked. **/
 public data class EphemeralMessageCommandInvocationEvent(
     override val command: EphemeralMessageCommand,
-    override val event: MessageCommandInteractionCreateEvent
+    override val event: MessageCommandInteractionCreateEvent,
+    override val coroutineContext: CoroutineContext = event.coroutineContext,
 ) : MessageCommandInvocationEvent<EphemeralMessageCommand>
 
 /** Event emitted when a public message command is invoked. **/
 public data class PublicMessageCommandInvocationEvent(
     override val command: PublicMessageCommand,
-    override val event: MessageCommandInteractionCreateEvent
+    override val event: MessageCommandInteractionCreateEvent,
+    override val coroutineContext: CoroutineContext = event.coroutineContext,
 ) : MessageCommandInvocationEvent<PublicMessageCommand>
 
 // endregion
@@ -34,13 +37,15 @@ public interface MessageCommandSucceededEvent<C : MessageCommand<*>> :
 /** Event emitted when an ephemeral message command invocation succeeds. **/
 public data class EphemeralMessageCommandSucceededEvent(
     override val command: EphemeralMessageCommand,
-    override val event: MessageCommandInteractionCreateEvent
+    override val event: MessageCommandInteractionCreateEvent,
+    override val coroutineContext: CoroutineContext = event.coroutineContext,
 ) : MessageCommandSucceededEvent<EphemeralMessageCommand>
 
 /** Event emitted when a public message command invocation succeeds. **/
 public data class PublicMessageCommandSucceededEvent(
     override val command: PublicMessageCommand,
-    override val event: MessageCommandInteractionCreateEvent
+    override val event: MessageCommandInteractionCreateEvent,
+    override val coroutineContext: CoroutineContext = event.coroutineContext,
 ) : MessageCommandSucceededEvent<PublicMessageCommand>
 
 // endregion
@@ -59,14 +64,16 @@ public interface MessageCommandFailedChecksEvent<C : MessageCommand<*>> :
 public data class EphemeralMessageCommandFailedChecksEvent(
     override val command: EphemeralMessageCommand,
     override val event: MessageCommandInteractionCreateEvent,
-    override val reason: String
+    override val reason: String,
+    override val coroutineContext: CoroutineContext = event.coroutineContext,
 ) : MessageCommandFailedChecksEvent<EphemeralMessageCommand>
 
 /** Event emitted when a public message command's checks fail. **/
 public data class PublicMessageCommandFailedChecksEvent(
     override val command: PublicMessageCommand,
     override val event: MessageCommandInteractionCreateEvent,
-    override val reason: String
+    override val reason: String,
+    override val coroutineContext: CoroutineContext = event.coroutineContext,
 ) : MessageCommandFailedChecksEvent<PublicMessageCommand>
 
 /** Basic event emitted when a message command invocation fails with an exception. **/
@@ -77,14 +84,16 @@ public interface MessageCommandFailedWithExceptionEvent<C : MessageCommand<*>> :
 public data class EphemeralMessageCommandFailedWithExceptionEvent(
     override val command: EphemeralMessageCommand,
     override val event: MessageCommandInteractionCreateEvent,
-    override val throwable: Throwable
+    override val throwable: Throwable,
+    override val coroutineContext: CoroutineContext = event.coroutineContext,
 ) : MessageCommandFailedWithExceptionEvent<EphemeralMessageCommand>
 
 /** Event emitted when a public message command invocation fails with an exception. **/
 public data class PublicMessageCommandFailedWithExceptionEvent(
     override val command: PublicMessageCommand,
     override val event: MessageCommandInteractionCreateEvent,
-    override val throwable: Throwable
+    override val throwable: Throwable,
+    override val coroutineContext: CoroutineContext = event.coroutineContext,
 ) : MessageCommandFailedWithExceptionEvent<PublicMessageCommand>
 
 // endregion

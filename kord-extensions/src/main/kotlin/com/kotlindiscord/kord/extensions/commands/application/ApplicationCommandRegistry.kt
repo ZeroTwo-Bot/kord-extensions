@@ -544,7 +544,7 @@ public open class ApplicationCommandRegistry : KoinComponent {
 
         try {
             if (guild != null) {
-                kord.editApplicationCommandPermissions(kord.resources.applicationId, guild.id, response.id) {
+                kord.editApplicationCommandPermissions(guild.id, response.id) {
                     command.allowedUsers.map { user(it, true) }
                     command.disallowedUsers.map { user(it, false) }
 
@@ -611,7 +611,7 @@ public open class ApplicationCommandRegistry : KoinComponent {
 
         try {
             if (guild != null) {
-                kord.editApplicationCommandPermissions(kord.resources.applicationId, guild.id, response.id) {
+                kord.editApplicationCommandPermissions(guild.id, response.id) {
                     command.allowedUsers.map { user(it, true) }
                     command.disallowedUsers.map { user(it, false) }
 
@@ -677,7 +677,7 @@ public open class ApplicationCommandRegistry : KoinComponent {
 
         try {
             if (guild != null) {
-                kord.editApplicationCommandPermissions(kord.resources.applicationId, guild.id, response.id) {
+                kord.editApplicationCommandPermissions(guild.id, response.id) {
                     command.allowedUsers.map { user(it, true) }
                     command.disallowedUsers.map { user(it, false) }
 
