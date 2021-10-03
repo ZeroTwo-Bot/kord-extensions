@@ -13,12 +13,9 @@ import dev.kord.core.entity.Message
 import dev.kord.core.entity.interaction.EphemeralFollowupMessage
 import dev.kord.core.entity.interaction.PublicFollowupMessage
 import dev.kord.core.event.interaction.ApplicationInteractionCreateEvent
-import dev.kord.rest.builder.message.create.EphemeralFollowupMessageCreateBuilder
-import dev.kord.rest.builder.message.create.EphemeralInteractionResponseCreateBuilder
-import dev.kord.rest.builder.message.create.PublicFollowupMessageCreateBuilder
-import dev.kord.rest.builder.message.create.PublicInteractionResponseCreateBuilder
-import dev.kord.rest.builder.message.modify.EphemeralInteractionResponseModifyBuilder
-import dev.kord.rest.builder.message.modify.PublicInteractionResponseModifyBuilder
+import dev.kord.rest.builder.message.create.FollowupMessageCreateBuilder
+import dev.kord.rest.builder.message.create.InteractionResponseCreateBuilder
+import dev.kord.rest.builder.message.modify.InteractionResponseModifyBuilder
 import java.util.*
 
 /** Interface representing a generic, unsafe interaction action context. **/
@@ -34,7 +31,7 @@ public interface UnsafeInteractionContext {
 /** Send an ephemeral ack, if the interaction hasn't been acknowledged yet. **/
 @UnsafeAPI
 public suspend fun UnsafeInteractionContext.ackEphemeral(
-    builder: (suspend EphemeralInteractionResponseCreateBuilder.() -> Unit)? = null
+    builder: (suspend InteractionResponseCreateBuilder.() -> Unit)? = null
 ): EphemeralInteractionResponseBehavior {
     if (interactionResponse != null) {
         error("The interaction has already been acknowledged.")
@@ -52,7 +49,7 @@ public suspend fun UnsafeInteractionContext.ackEphemeral(
 /** Send a public ack, if the interaction hasn't been acknowledged yet. **/
 @UnsafeAPI
 public suspend fun UnsafeInteractionContext.ackPublic(
-    builder: (suspend PublicInteractionResponseCreateBuilder.() -> Unit)? = null
+    builder: (suspend InteractionResponseCreateBuilder.() -> Unit)? = null
 ): PublicInteractionResponseBehavior {
     if (interactionResponse != null) {
         error("The interaction has already been acknowledged.")
@@ -70,10 +67,10 @@ public suspend fun UnsafeInteractionContext.ackPublic(
 /** Respond to the current interaction with an ephemeral followup, or throw if it isn't ephemeral. **/
 @UnsafeAPI
 public suspend inline fun UnsafeInteractionContext.respondEphemeral(
-    builder: EphemeralFollowupMessageCreateBuilder.() -> Unit
-): EphemeralFollowupMessage {
+    builder: FollowupMessageCreateBuilder.() -> Unit
+): PublicFollowupMessage {
     return when (val interaction = interactionResponse) {
-        is EphemeralInteractionResponseBehavior -> interaction.followUpEphemeral(builder)
+        is EphemeralInteractionResponseBehavior -> interaction.followUp(true, builder)
         is PublicInteractionResponseBehavior -> error("Initial interaction response is not public.")
 
         null -> error("Acknowledge the interaction before trying to follow-up.")
@@ -84,11 +81,11 @@ public suspend inline fun UnsafeInteractionContext.respondEphemeral(
 /** Respond to the current interaction with a public followup. **/
 @UnsafeAPI
 public suspend inline fun UnsafeInteractionContext.respondPublic(
-    builder: PublicFollowupMessageCreateBuilder.() -> Unit
+    builder: FollowupMessageCreateBuilder.() -> Unit
 ): PublicFollowupMessage {
     return when (val interaction = interactionResponse) {
-        is PublicInteractionResponseBehavior -> interaction.followUp(builder)
-        is EphemeralInteractionResponseBehavior -> interaction.followUpPublic(builder)
+        is PublicInteractionResponseBehavior -> interaction.followUp(false, builder)
+        is EphemeralInteractionResponseBehavior -> interaction.followUp(true, builder)
 
         null -> error("Acknowledge the interaction before trying to follow-up.")
         else -> error("Unsupported initial interaction response type - please report this.")
@@ -101,8 +98,8 @@ public suspend inline fun UnsafeInteractionContext.respondPublic(
 @Suppress("UseIfInsteadOfWhen")
 @UnsafeAPI
 public suspend inline fun UnsafeInteractionContext.editPublic(
-    builder: PublicInteractionResponseModifyBuilder.() -> Unit
-): Message {
+    builder: InteractionResponseModifyBuilder.() -> Unit
+): Unit {
     return when (val interaction = interactionResponse) {
         is PublicInteractionResponseBehavior -> interaction.edit(builder)
 
@@ -117,7 +114,7 @@ public suspend inline fun UnsafeInteractionContext.editPublic(
 @Suppress("UseIfInsteadOfWhen")
 @UnsafeAPI
 public suspend inline fun UnsafeInteractionContext.editEphemeral(
-    builder: EphemeralInteractionResponseModifyBuilder.() -> Unit
+    builder: InteractionResponseModifyBuilder.() -> Unit
 ) {
     when (val interaction = interactionResponse) {
         is EphemeralInteractionResponseBehavior -> interaction.edit(builder)
