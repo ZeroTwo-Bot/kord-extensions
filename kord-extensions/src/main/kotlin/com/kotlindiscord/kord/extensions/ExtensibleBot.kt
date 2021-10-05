@@ -78,10 +78,6 @@ public open class ExtensibleBot(public val settings: ExtensibleBotBuilder, priva
 
             defaultStrategy = settings.cacheBuilder.defaultStrategy
 
-            if (settings.intentsBuilder != null) {
-                this.intents = Intents(settings.intentsBuilder!!)
-            }
-
             if (settings.shardingBuilder != null) {
                 sharding(settings.shardingBuilder!!)
             }
@@ -108,7 +104,12 @@ public open class ExtensibleBot(public val settings: ExtensibleBotBuilder, priva
 
         registerListeners()
 
-        getKoin().get<Kord>().login(settings.presenceBuilder)
+        getKoin().get<Kord>().login {
+            this.presence {
+                settings.presenceBuilder.invoke(this)
+            }
+            this.intents = Intents(settings.intentsBuilder!!)
+        }
     }
 
     /** This function sets up all of the bot's default event listeners. **/

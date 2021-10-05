@@ -13,16 +13,12 @@ publishing {
         maven {
             name = "KotDis"
 
-            url = if (project.version.toString().contains("SNAPSHOT")) {
-                uri("https://maven.kotlindiscord.com/repository/maven-snapshots/")
-            } else {
-                uri("https://maven.kotlindiscord.com/repository/maven-releases/")
-            }
-
+            url = uri("https://nexus.zerotwo.bot/repository/m2-snapshots-public/")
             credentials {
-                username = project.findProperty("kotdis.user") as String? ?: System.getenv("KOTLIN_DISCORD_USER")
-                password = project.findProperty("kotdis.password") as String?
-                    ?: System.getenv("KOTLIN_DISCORD_PASSWORD")
+                username = findProperty("nexus.user") as? String
+                    ?: System.getenv("NEXUS_USER")
+                password = findProperty("nexus.password") as? String
+                    ?: System.getenv("NEXUS_PASSWORD")
             }
 
             version = project.version

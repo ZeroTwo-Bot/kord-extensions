@@ -32,13 +32,13 @@ import dev.kord.core.behavior.GuildBehavior
 import dev.kord.core.behavior.UserBehavior
 import dev.kord.core.behavior.channel.ChannelBehavior
 import dev.kord.core.builder.kord.KordBuilder
-import dev.kord.core.builder.kord.Shards
 import dev.kord.core.cache.KordCacheBuilder
 import dev.kord.core.event.message.MessageCreateEvent
 import dev.kord.core.supplier.EntitySupplier
 import dev.kord.core.supplier.EntitySupplyStrategy
 import dev.kord.gateway.Intents
 import dev.kord.gateway.builder.PresenceBuilder
+import dev.kord.gateway.builder.Shards
 import dev.kord.rest.builder.message.create.MessageCreateBuilder
 import mu.KLogger
 import mu.KotlinLogging
